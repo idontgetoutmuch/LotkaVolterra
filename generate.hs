@@ -1,18 +1,13 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall            #-}
+
 {-# LANGUAGE ScopedTypeVariables #-}
 
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleContexts    #-}
 
 import           Data.Random
-import           Data.Random.Source.PureMT ( pureMT )
-import           Control.Monad.State ( evalState, replicateM )
-import qualified Control.Monad.Loops as ML
-import           Control.Monad.Writer ( tell, WriterT, lift,
-                                        runWriterT
-                                      )
 
 import           Data.List (zipWith4)
 
