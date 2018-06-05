@@ -81,7 +81,6 @@ singleDataSet n = do
                        (LA.toList hs) (LA.toList ls) [1900..] [1..]
   writeCSV ("generatedLV" ++ (show n) ++ ".csv") genDf
 
-
 main :: IO ()
 main = do
   mapM_ singleDataSet [1..nColonies]

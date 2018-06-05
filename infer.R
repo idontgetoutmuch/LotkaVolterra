@@ -4,13 +4,60 @@ library(dplyr)
 
 setwd("/Users/dom/Dropbox/Tidy/LotkaVolterra")
 
-lynx_hare_df <-
-  read.csv("hudson-bay-lynx-hare.csv",
-           comment.char="#")
+## We generate the data with generate.hs
+
+## Rate {theta1 = 0.45540774202311274, theta2 = 2.575691072447691e-2,
+## theta3 = 0.8137594080059827, theta4 = 2.5017010388809404e-2}
 
 lynx_hare_df <-
   read.csv("generatedLV1.csv",
            comment.char="#")
+
+actual_df <- data.frame( Year = lynx_hare_df$"Year"
+                       , Lynx = lynx_hare_df$"Lynx"
+                       , Hare = lynx_hare_df$"Hare")
+
+N <- length(actual_df$Year) - 1
+ts <- 1:N
+y_init <- c(actual_df$Hare[1], actual_df$Lynx[1])
+y <- as.matrix(actual_df[2:(N + 1), 2:3])
+y <- cbind(y[ , 2], y[ , 1]); # hare, lynx order
+lynx_hare_data <- list(N, ts, y_init, y)
+
+## We use Bob Carpenter's model
+
+model <- stan_model("lotka-volterra.stan")
+fit <- sampling(model, data = lynx_hare_data, iter = 400, cores = 4, seed = 123)
+
+print(fit, pars=c("theta", "sigma", "z_init"),
+      probs=c(0.1, 0.5, 0.9), digits = 3)
+
+## And we get a pretty good fit! 
+
+## Inference for Stan model: lotka-volterra.
+## 4 chains, each with iter=400; warmup=200; thin=1; 
+## post-warmup draws per chain=200, total post-warmup draws=800.
+
+##             mean se_mean    sd    10%    50%    90% n_eff   Rhat
+## theta[1]   0.455       0 0.000  0.455  0.455  0.455   789  1.007
+## theta[2]   0.026       0 0.000  0.026  0.026  0.026   489  1.005
+## theta[3]   0.814       0 0.000  0.814  0.814  0.814   737  1.006
+## theta[4]   0.025       0 0.000  0.025  0.025  0.025   800  1.007
+## sigma[1]   0.000       0 0.000  0.000  0.000  0.001     2 12.566
+## sigma[2]   0.000       0 0.000  0.000  0.000  0.000     3  4.668
+## z_init[1] 30.000       0 0.003 29.998 30.000 30.001   800  1.005
+## z_init[2]  4.000       0 0.000  4.000  4.000  4.000   594  0.999
+
+## Samples were drawn using NUTS(diag_e) at Tue Jun  5 17:36:36 2018.
+## For each parameter, n_eff is a crude measure of effective sample size,
+## and Rhat is the potential scale reduction factor on split chains (at 
+## convergence, Rhat=1).
+
+
+## Let's try again with a different data set
+
+## Rate {theta1 = 0.4602754411852609, theta2 = 2.50394328998701e-2,
+## theta3 = 0.8559624367887789, theta4 = 2.4001217838770027e-2}
 
 lynx_hare_df <-
   read.csv("generatedLV2.csv",
@@ -28,19 +75,69 @@ y <- cbind(y[ , 2], y[ , 1]); # hare, lynx order
 lynx_hare_data <- list(N, ts, y_init, y)
 
 model <- stan_model("lotka-volterra.stan")
-fit <- sampling(model, data = lynx_hare_data, cores = 4, seed = 123)
+fit <- sampling(model, data = lynx_hare_data, iter = 400, cores = 4, seed = 123)
 
 print(fit, pars=c("theta", "sigma", "z_init"),
       probs=c(0.1, 0.5, 0.9), digits = 3)
 
-M <- 1
-p <- array(c(y), dim = c(20,2,1))
+## Again we get a pretty good fit!
+
+## Inference for Stan model: lotka-volterra.
+## 4 chains, each with iter=400; warmup=200; thin=1; 
+## post-warmup draws per chain=200, total post-warmup draws=800.
+
+##             mean se_mean    sd    10%    50%    90% n_eff   Rhat
+## theta[1]   0.460   0.000 0.000  0.460  0.460  0.460   622  1.006
+## theta[2]   0.025   0.000 0.000  0.025  0.025  0.025   143  1.016
+## theta[3]   0.856   0.000 0.000  0.856  0.856  0.856   623  1.014
+## theta[4]   0.024   0.000 0.000  0.024  0.024  0.024   611  1.004
+## sigma[1]   0.000   0.000 0.000  0.000  0.000  0.000     3  2.169
+## sigma[2]   0.001   0.001 0.001  0.000  0.000  0.002     2 24.406
+## z_init[1] 30.000   0.000 0.000 30.000 30.000 30.000   500  0.996
+## z_init[2]  4.000   0.000 0.001  4.000  4.000  4.001   143  1.014
+
+## Samples were drawn using NUTS(diag_e) at Tue Jun  5 17:41:55 2018.
+## For each parameter, n_eff is a crude measure of effective sample size,
+## and Rhat is the potential scale reduction factor on split chains (at 
+## convergence, Rhat=1).
+
+## Now let's try the hierarchical model
+
+lynx_hare_df <-
+  read.csv("generatedLV1.csv",
+           comment.char="#")
+
+actual_df <- data.frame( Year = lynx_hare_df$"Year"
+                       , Lynx = lynx_hare_df$"Lynx"
+                       , Hare = lynx_hare_df$"Hare")
+
+N <- length(actual_df$Year) - 1
+ts <- 1:N
+y_init <- c(actual_df$Hare[1], actual_df$Lynx[1])
+y <- as.matrix(actual_df[2:(N + 1), 2:3])
+u <- cbind(y[ , 2], y[ , 1]); # hare, lynx order
+
+lynx_hare_df <-
+  read.csv("generatedLV2.csv",
+           comment.char="#")
+
+actual_df <- data.frame( Year = lynx_hare_df$"Year"
+                       , Lynx = lynx_hare_df$"Lynx"
+                       , Hare = lynx_hare_df$"Hare")
+
+N <- length(actual_df$Year) - 1
+ts <- 1:N
+y_init <- c(actual_df$Hare[1], actual_df$Lynx[1])
+y <- as.matrix(actual_df[2:(N + 1), 2:3])
+v <- cbind(y[ , 2], y[ , 1]); # hare, lynx order
+
+M <- 2
+p <- array(c(u,v), dim = c(20,2,2))
 lynx_hare_data_H <- list(N, M, ts, y_init, p)
-modelH <- stan_model("lotka-volterra-hierarchical.stan")
-fitH <- sampling(modelH, data = lynx_hare_data_H, cores = 4, seed = 123)
 
 fitH <- stan(file="lotka-volterra-hierarchical.stan",
              data = lynx_hare_data_H,
+             iter = 800,
              cores = 4,
              seed = 123
              )
@@ -48,79 +145,3 @@ fitH <- stan(file="lotka-volterra-hierarchical.stan",
 print(fitH, pars=c("mu", "phi", "sigma", "z_init"),
       probs=c(0.1, 0.5, 0.9), digits = 3)
 
-
-N <- length(lynx_hare_df$Year) - 1
-ts <- 1:N
-y_init <- c(lynx_hare_df$Hare[1], lynx_hare_df$Lynx[1])
-y <- as.matrix(lynx_hare_df[2:(N + 1), 2:3])
-y <- cbind(y[ , 2], y[ , 1]); # hare, lynx order
-lynx_hare_data <- list(N, ts, y_init, y)
-
-theta <- c(0.500, 0.025, 0.800, 0.025)
-sigma <- c(0.25, 0.25)
-z_init <- y_init
-
-lynx_hare_gen_data <- list(N, ts, theta, z_init, sigma)
-
-model <- stan_model("lotka-volterra-gen.stan")
-
-gens <- stan(file="lotka-volterra-gen.stan",
-             data = lynx_hare_gen_data,
-             algorithm="Fixed_param",
-             iter = 1,
-             chains = 1,
-             seed = 123
-             )
-u <- extract(gens,permuted=FALSE)
-lo <- matrix(as.matrix(u)[3:(2*(N+1))],nrow=20,byrow=FALSE)
-hi <- matrix(as.matrix(u)[1:2],nrow=1,byrow=FALSE)
-rs <- rbind(hi,lo)
-
-M <- 1
-thetas <- t(as.matrix(theta))
-z_inits <- t(as.matrix(z_init))
-colony_data <- list (N, M, ts, thetas, z_inits, sigma)
-
-model <- stan_model("lotka-volterra-hierarch-gen.stan")
-
-M <- 1
-z_inits <- t(as.matrix(z_init))
-mu <- c(1.0, 0.05, 1.0, 0.05)
-tau <- c(0.1, 0.015, 0.1, 0.015)
-colony_data <- list (N, M, ts, z_inits, mu, tau, sigma)
-
-genss <- stan(file="lotka-volterra-hierarch-gen.stan",
-             data = colony_data,
-             algorithm="Fixed_param",
-             iter = 1,
-             chains = 1,
-             seed = 123
-             )
-us <- extract(genss,permuted=FALSE)
-
-model <- stan_model("lotka-volterra.stan")
-
-y <- lo
-lynx_hare_data <- list(N, ts, y_init, y)
-fit <- sampling(model, data = lynx_hare_data, seed = 123)
-
-print(fit, pars=c("theta", "sigma", "z_init"),
-      probs=c(0.1, 0.5, 0.9), digits = 3)
-
-simwork_df <- read.csv("/Users/dom/simwork.oldish/core/data/SimplerDiff/RunXXX/Outputs/Results/0.csv")
-
-calib_df <- read.csv("/Users/dom/simwork.oldish/core/data/SimplerDiff/CalibratedMdl0/Outputs/Results/0.csv")
-
-obs_df <- read.csv("/Users/dom/example-models/knitr/lotka-volterra/lynx_hare_df.csv")
-colnames(obs_df)[1] <- "Time"
-obs_df[1] <- obs_df[1] - 1
-
-both_df <- merge(obs_df, calib_df) ## simwork_df)
-
-png(filename="/Users/dom/simwork.oldish/core/data/SimplerDiff/RunXXX/Outputs/Results/1.png")
-ggplot(data=both_df, aes(Time)) +
-    geom_line(aes(y = predator.mol., colour = "Predator")) +
-    geom_line(aes(y = prey.mol., colour = "Prey")) +
-    geom_point(aes(y = Lynx, colour = "Predator")) +
-    geom_point(aes(y = Hare, colour = "Prey"))
-dev.off()
