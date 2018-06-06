@@ -38,7 +38,7 @@ ts = map (fromIntegral . fst . fst) predPreyObs
 
 nMeasTs, nColonies :: Int
 nMeasTs = length ts
-nColonies = 2
+nColonies = 16
 
 initPop :: (Double, Double)
 initPop = (snd $ fst $ head predPreyObs, snd $ snd $ head $ predPreyObs)

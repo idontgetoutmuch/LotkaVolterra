@@ -42,6 +42,8 @@ mkDerivation {
   buildDepends = [ libintlOrEmpty sundials];
   executableSystemDepends = [
     R
+    pkgs.rPackages.bayesplot
+    pkgs.rPackages.codetools
     pkgs.rPackages.dplyr
     pkgs.rPackages.ggmap
     pkgs.rPackages.ggplot2
